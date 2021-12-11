@@ -1,5 +1,5 @@
 """
-
+Functions used for manage open meteo data
 """
 import requests
 
@@ -20,13 +20,13 @@ INSERT INTO weather (date, id, min, max) VALUES (
 
 def get_temperature_data_open_meteo(ds: str, base_url: str, lon: float, lat: float, city_id: str) -> Dict[str, Any]:
     """
-
-    :param ds:
-    :param base_url:
-    :param lon:
-    :param lat:
-    :param city_id:
-    :return:
+    Makes an HTTP GET action to retrieve the data of the city temperature
+    :param ds: date of the temperature to retrieve
+    :param base_url: open meteo url
+    :param lon: longitude of the city
+    :param lat: latitude of the city
+    :param city_id: id of the city
+    :return: dict with temperature data
     """
     params: Dict[str, Any] = {
         'latitude': lat,
@@ -49,10 +49,9 @@ def get_temperature_data_open_meteo(ds: str, base_url: str, lon: float, lat: flo
 
 def save_temperature_data(ti: TaskInstance, city_name: str) -> None:
     """
-
-    :param ti:
-    :param city_name:
-    :return:
+    Prints the data received from the previous task
+    :param ti: context of the task instance
+    :param city_name: name of the city used in the xcom pull
     """
     temperature_data: Dict[str, Any] = ti.xcom_pull(key='return_value', task_ids=[f'get_temp_data_{city_name}'])
     print(temperature_data)
