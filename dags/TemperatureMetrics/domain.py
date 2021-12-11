@@ -1,19 +1,18 @@
 """
-Functions used for manage open meteo data
+Functions used for manage open meteo data about temperature
 """
 import requests
 
-from airflow.models.taskinstance import TaskInstance
 from typing import Dict, Any
 
 url: str = "https://api.open-meteo.com/v1/forecast"
 
 INSERT_INTO_STMT: str = """
 INSERT INTO weather (date, id, min, max) VALUES (
-    '{{ ti.xcom_pull(task_ids="process_%(name)s.get_weather_data_%(name)s")['time'] }}', 
-    {{ ti.xcom_pull(task_ids="process_%(name)s.get_weather_data_%(name)s")['id'] }}, 
-    {{ ti.xcom_pull(task_ids="process_%(name)s.get_weather_data_%(name)s")['min'] }}, 
-    {{ ti.xcom_pull(task_ids="process_%(name)s.get_weather_data_%(name)s")['max'] }}
+    '{{ ti.xcom_pull(task_ids="process_%(name)s.get_temperature_data_%(name)s")['time'] }}', 
+    {{ ti.xcom_pull(task_ids="process_%(name)s.get_temperature_data_%(name)s")['id'] }}, 
+    {{ ti.xcom_pull(task_ids="process_%(name)s.get_temperature_data_%(name)s")['min'] }}, 
+    {{ ti.xcom_pull(task_ids="process_%(name)s.get_temperature_data_%(name)s")['max'] }}
 )
 """
 
