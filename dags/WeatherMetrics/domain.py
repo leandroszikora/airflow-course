@@ -47,11 +47,9 @@ def get_temperature_data_open_meteo(ds: str, base_url: str, lon: float, lat: flo
     }
 
 
-def save_temperature_data(ti: TaskInstance, city_name: str) -> None:
+def save_temperature_data(temperature_data: Dict[str, Any]) -> None:
     """
     Prints the data received from the previous task
-    :param ti: context of the task instance
-    :param city_name: name of the city used in the xcom pull
+    :param temperature_data: dict with temperature data of the city
     """
-    temperature_data: Dict[str, Any] = ti.xcom_pull(key='return_value', task_ids=[f'get_temp_data_{city_name}'])
     print(temperature_data)

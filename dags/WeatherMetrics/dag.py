@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from typing import Dict, Any
 
 from airflow import DAG
-from airflow.operators.python import PythonOperator
+from airflow.decorators import dag, task, task_group
 
 from WeatherMetrics.cities import CITIES
 from WeatherMetrics.domain import get_temperature_data_open_meteo, save_temperature_data
@@ -25,31 +25,30 @@ config: Dict[str, Any] = dict(
     default_args=default_args
 )
 
-with DAG(**config) as dag:
+
+@dag(**config)
+def temperature_dag():
     for city in CITIES:
         city_name: str = '_'.join(city['city']['name'].lower().split(' '))
 
-        get_temperature_task: PythonOperator = PythonOperator(
-            task_id=f'get_temp_data_{city_name}',
-            python_callable=get_temperature_data_open_meteo,
-            op_kwargs=dict(
-                ds="{{ ds }}",
-                base_url="{{ var.value.open_meteo_url }}",
-                lon=city['city']['coord']['lon'],
-                lat=city['city']['coord']['lat'],
-                city_id=city['id']
-            ),
-            do_xcom_push=True
-        )
-        
-        save_temperature_task: PythonOperator = PythonOperator(
-            task_id=f'save_temp_data_{city_name}',
-            python_callable=save_temperature_data,
-            op_kwargs=dict(
-                city_name=city_name
-            ),
-            provide_context=True
-        )
+        @task_group(group_id=f'process_{city_name}')
+        def city_group():
+            @task(task_id=f'get_weather_data_{city_name}')
+            def get_temperature_task(url: str, city_param: Dict[str, Any], **kwargs) -> Dict[str, Any]:
+                ds: str = kwargs.get('ds')
+                city_id: str = city_param['id']
+                lon: float = city_param['city']['coord']['lon']
+                lat: float = city_param['city']['coord']['lat']
+                return get_temperature_data_open_meteo(ds, url, lon, lat, city_id)
 
-        get_temperature_task >> save_temperature_task
+            @task(task_id=f'save_temp_data_{city_name}')
+            def save_temperature_task(temperature: Dict[str, Any]):
+                save_temperature_data(temperature)
 
+            temperature_data: Dict[str, Any] = get_temperature_task("{{ var.value.open_meteo_url }}", city)
+            save_temperature_task(temperature_data)
+
+        city_group()
+
+
+temperature_dag: DAG = temperature_dag()

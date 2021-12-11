@@ -7,7 +7,8 @@ LONDON = {
             "lon": -0.09184,
             "lat": 51.512791
         }
-    }
+    },
+    "priority": 1
 }
 
 LIMA = {
@@ -19,7 +20,8 @@ LIMA = {
             "lon": -77.028236,
             "lat": -12.04318
         }
-    }
+    },
+    "priority": 2
 }
 
 BUENOS_AIRES = {
@@ -31,7 +33,8 @@ BUENOS_AIRES = {
             "lon": -58.377232,
             "lat": -34.613152
         }
-    }
+    },
+    "priority": 2
 }
 
 NEW_YORK = {
@@ -43,7 +46,8 @@ NEW_YORK = {
             "lon": -74.005966,
             "lat": 40.714272
         }
-    }
+    },
+    "priority": 1
 }
 
 SAO_PAULO = {
@@ -55,7 +59,8 @@ SAO_PAULO = {
             "lon": -46.636108,
             "lat": -23.547501
         }
-    }
+    },
+    "priority": 3
 }
 
 CITIES = [LONDON, LIMA, BUENOS_AIRES, NEW_YORK, SAO_PAULO]
