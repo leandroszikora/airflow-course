@@ -33,7 +33,10 @@ with DAG(**config) as dag:
     temperature_sensor: ExternalTaskSensor = ExternalTaskSensor(
         task_id='wait_temperature_metrics_dag',
         external_dag_id='TemperatureMetrics',
-        execution_delta=timedelta(hours=1)
+        execution_delta=timedelta(hours=1),
+        mode='reschedule',
+        timeout=60 * 60 * 2,
+        poke_interval=60 * 2
     )
 
     for city in CITIES:
