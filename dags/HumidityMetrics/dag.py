@@ -28,13 +28,6 @@ config: Dict[str, Any] = dict(
 )
 
 with DAG(**config) as dag:
-    cities_process: List[Any] = []
-
-    temperature_sensor: ExternalTaskSensor = ExternalTaskSensor(
-        task_id='wait_temperature_metrics_dag',
-        external_dag_id='TemperatureMetrics',
-        execution_delta=timedelta(hours=1)
-    )
 
     for city in CITIES:
         city_name: str = '_'.join(city['city']['name'].lower().split(' '))
@@ -67,9 +60,5 @@ with DAG(**config) as dag:
             humidity_data: Dict[str, Any] = get_humidity_task("{{ var.value.open_meteo_url }}", city)
             humidity_data >> delete_ds_humidity_values >> save_weather_data
 
-            cities_process.append(humidity_data)
-
 
         city_group()
-
-    temperature_sensor >> cities_process

@@ -3,6 +3,7 @@ from typing import Dict, Any
 
 from airflow import DAG
 from airflow.decorators import task_group, task
+from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 
 from TemperatureMetrics.cities import CITIES
@@ -27,6 +28,13 @@ config: Dict[str, Any] = dict(
 )
 
 with DAG(**config) as dag:
+    trigger_humidity_dag_task = TriggerDagRunOperator(
+        task_id='trigger_humidity_dag',
+        trigger_dag_id='HumidityMetrics',
+        wait_for_completion=True,
+        poke_interval=120
+    )
+
     for city in CITIES:
         city_name: str = '_'.join(city['city']['name'].lower().split(' '))
 
@@ -55,7 +63,7 @@ with DAG(**config) as dag:
             )
 
             temperature_data: Dict[str, Any] = get_temperature_task("{{ var.value.open_meteo_url }}", city)
-            temperature_data >> delete_ds_city_values >> save_weather_data
+            temperature_data >> delete_ds_city_values >> save_weather_data >> trigger_humidity_dag_task
 
 
         city_group()
