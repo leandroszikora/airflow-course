@@ -8,7 +8,7 @@ from typing import Dict, Any
 url: str = "https://api.open-meteo.com/v1/forecast"
 
 INSERT_INTO_STMT: str = """
-INSERT INTO weather (date, id, min, max) VALUES (
+INSERT INTO temperature (date, id, min, max) VALUES (
     '{{ ti.xcom_pull(task_ids="process_%(name)s.get_temperature_data_%(name)s")['time'] }}', 
     {{ ti.xcom_pull(task_ids="process_%(name)s.get_temperature_data_%(name)s")['id'] }}, 
     {{ ti.xcom_pull(task_ids="process_%(name)s.get_temperature_data_%(name)s")['min'] }}, 

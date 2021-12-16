@@ -5,8 +5,8 @@ from airflow import DAG
 from airflow.decorators import task_group, task
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 
-from TemperatureMetrics.cities import CITIES
-from TemperatureMetrics.domain import get_temperature_data_open_meteo, INSERT_INTO_STMT
+from WeatherMetrics.cities import CITIES
+from WeatherMetrics.TemperatureMetrics.domain import get_temperature_data_open_meteo, INSERT_INTO_STMT
 
 default_args: Dict[str, Any] = dict(
     owner='Leandro Szikora',
@@ -44,7 +44,7 @@ with DAG(**config) as dag:
                 task_id=f'delete_temperature_data_{city_name}',
                 pool='weather_pool',
                 postgres_conn_id='postgres_default',
-                sql="DELETE FROM weather WHERE id = {{params.id}} AND date = '{{ds}}'",
+                sql="DELETE FROM temperature WHERE id = {{params.id}} AND date = '{{ds}}'",
                 params={'id': city['id']}
             )
 

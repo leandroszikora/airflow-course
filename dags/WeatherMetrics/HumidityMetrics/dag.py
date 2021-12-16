@@ -6,8 +6,8 @@ from airflow.decorators import task_group
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.sensors.external_task import ExternalTaskSensor
 
-from TemperatureMetrics.cities import CITIES
-from HumidityMetrics.domain import get_humidity_data_open_meteo, INSERT_INTO_STMT
+from WeatherMetrics.cities import CITIES
+from WeatherMetrics.HumidityMetrics.domain import get_humidity_data_open_meteo, INSERT_INTO_STMT
 
 default_args: Dict[str, Any] = dict(
     owner='Leandro Szikora',
@@ -57,7 +57,7 @@ with DAG(**config) as dag:
                 task_id=f'delete_humidity_data_{city_name}',
                 pool='weather_pool',
                 postgres_conn_id='postgres_default',
-                sql="DELETE FROM weather WHERE id = {{params.id}} AND date = '{{ds}}'",
+                sql="DELETE FROM humidity WHERE id = {{params.id}} AND date = '{{ds}}'",
                 params={'id': city['id']}
             )
 
