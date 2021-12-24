@@ -2,11 +2,12 @@ from datetime import datetime, timedelta
 from typing import Dict, Any
 
 from airflow import DAG
-from airflow.decorators import task_group, task
 from airflow.providers.postgres.operators.postgres import PostgresOperator
+from airflow.utils.task_group import TaskGroup
 
 from WeatherMetrics.cities import CITIES
-from WeatherMetrics.TemperatureMetrics.domain import get_temperature_data_open_meteo, INSERT_INTO_STMT
+from WeatherMetrics.TemperatureMetrics.domain import INSERT_INTO_STMT
+from WeatherMetrics.weather_lib.operators.open_meteo import OpenMeteoMetricsOperator
 
 default_args: Dict[str, Any] = dict(
     owner='Leandro Szikora',
@@ -30,15 +31,20 @@ with DAG(**config) as dag:
     for city in CITIES:
         city_name: str = '_'.join(city['city']['name'].lower().split(' '))
 
-        @task_group(group_id=f'process_{city_name}')
-        def city_group():
-            @task(task_id=f'get_temperature_data_{city_name}', pool='weather_pool', priority_weight=city['priority'])
-            def get_temperature_task(url: str, city_param: Dict[str, Any], **kwargs) -> Dict[str, Any]:
-                ds: str = kwargs.get('ds')
-                city_id: str = city_param['id']
-                lon: float = city_param['city']['coord']['lon']
-                lat: float = city_param['city']['coord']['lat']
-                return get_temperature_data_open_meteo(ds, url, lon, lat, city_id)
+        with TaskGroup(group_id=f'process_{city_name}') as city_group:
+            get_temperature_task = OpenMeteoMetricsOperator(
+                task_id=f'get_temperature_data_{city_name}',
+                pool='weather_pool',
+                priority_weight=city['priority'],
+                city_data=city,
+                frequency='daily',
+                metrics=['temperature_2m_max', 'temperature_2m_min'],
+                metrics_mapper=dict(
+                    temperature_2m_max='max',
+                    temperature_2m_min='min'
+                ),
+                http_conn_id='open_meteo'
+            )
 
             delete_ds_city_values = PostgresOperator(
                 task_id=f'delete_temperature_data_{city_name}',
@@ -54,8 +60,4 @@ with DAG(**config) as dag:
                 sql=INSERT_INTO_STMT % {'name': city_name}
             )
 
-            temperature_data: Dict[str, Any] = get_temperature_task("{{ var.value.open_meteo_url }}", city)
-            temperature_data >> delete_ds_city_values >> save_weather_data
-
-
-        city_group()
+            get_temperature_task >> delete_ds_city_values >> save_weather_data

@@ -2,12 +2,13 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, List
 
 from airflow import DAG
-from airflow.decorators import task_group
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.sensors.external_task import ExternalTaskSensor
+from airflow.utils.task_group import TaskGroup
 
 from WeatherMetrics.cities import CITIES
-from WeatherMetrics.HumidityMetrics.domain import get_humidity_data_open_meteo, INSERT_INTO_STMT
+from WeatherMetrics.HumidityMetrics.domain import INSERT_INTO_STMT
+from WeatherMetrics.weather_lib.operators.open_meteo import OpenMeteoMetricsOperator
 
 default_args: Dict[str, Any] = dict(
     owner='Leandro Szikora',
@@ -42,16 +43,19 @@ with DAG(**config) as dag:
     for city in CITIES:
         city_name: str = '_'.join(city['city']['name'].lower().split(' '))
 
-
-        @task_group(group_id=f'process_{city_name}', dag=dag)
-        def city_group():
-            @dag.task(task_id=f'get_humidity_data_{city_name}', pool='weather_pool', priority_weight=city['priority'])
-            def get_humidity_task(url: str, city_param: Dict[str, Any], **kwargs) -> Dict[str, Any]:
-                ds: str = kwargs.get('ds')
-                city_id: str = city_param['id']
-                lon: float = city_param['city']['coord']['lon']
-                lat: float = city_param['city']['coord']['lat']
-                return get_humidity_data_open_meteo(ds, url, lon, lat, city_id)
+        with TaskGroup(group_id=f'process_{city_name}') as city_group:
+            get_humidity_task = OpenMeteoMetricsOperator(
+                task_id=f'get_humidity_data_{city_name}',
+                pool='weather_pool',
+                priority_weight=city['priority'],
+                city_data=city,
+                frequency='hourly',
+                metrics=['relativehumidity_2m'],
+                metrics_mapper=dict(
+                    relativehumidity_2m='relative_humidity'
+                ),
+                http_conn_id='open_meteo'
+            )
 
             delete_ds_humidity_values = PostgresOperator(
                 task_id=f'delete_humidity_data_{city_name}',
@@ -67,12 +71,8 @@ with DAG(**config) as dag:
                 sql=INSERT_INTO_STMT % {'name': city_name}
             )
 
-            humidity_data: Dict[str, Any] = get_humidity_task("{{ var.value.open_meteo_url }}", city)
-            humidity_data >> delete_ds_humidity_values >> save_weather_data
+            get_humidity_task >> delete_ds_humidity_values >> save_weather_data
 
-            cities_process.append(humidity_data)
-
-
-        city_group()
+            cities_process.append(get_humidity_task)
 
     temperature_sensor >> cities_process
