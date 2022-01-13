@@ -1,0 +1,69 @@
+# Both these values should be set to the Airflow version
+# running in the environment
+airflowVersion: 2.2.1
+defaultAirflowTag: 2.2.1
+
+images:
+  # Airflow Docker image for the installation
+  # Built from images/airflow/Dockerfile
+  airflow:
+    repository: my-airflow
+    tag: 0.0.1
+
+# Using the KubernetesExecutor
+# We should consider switching to the CeleryExecutor for the DE instance
+executor: KubernetesExecutor
+
+# Name of the secret containing the installation's Fernet Key
+# The secret should have a key called 'fetnet-key' with the value
+fernetKeySecretName: fernet-key
+
+# Disable the development metadata database
+postgresql:
+  enabled: true
+
+## Configure Airflow's metadata database
+#data:
+#  # Name of the secret containing the installation's connection string to the metadata database
+#  # The secret should have a key called 'connection' with the value
+#  metadataSecretName: metadata-database-connection  # Secret should have key 'connection'
+
+# PgBouncer configuration
+pgBouncer:
+  enabled: true
+  maxClientConn: 100
+  metadataPoolSize: 10
+
+# Webserver configuration
+webserver:
+  replicas: 1
+  service:
+    type: NodePort
+
+# Scheduler configuration
+scheduler:
+  replicas: 1
+
+# Configure the Airflow instance
+# These values get injected into airflow.cfg
+config:
+  webserver:
+    # Expose the airflow.cfg file on the UI for convenience
+    expose_config: 'True'
+  api:
+    # Enable the REST API
+    auth_backend: airflow.api.auth.backend.basic_auth
+
+# Configure DAGs using git-sync
+# We need a PersistentVolume that supports ReadWriteMany, so we use
+# the EFS StorageClass
+dags:
+  persistence:
+    enabled: false
+  gitSync:
+    enabled: true
+    repo: <YOUR_REPO>
+    branch: main
+    subPath: dags
+    maxFailures: 10
+    wait: 60
