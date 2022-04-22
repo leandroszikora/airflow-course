@@ -21,7 +21,7 @@ config: Dict[str, Any] = dict(
     schedule_interval='@daily',
     start_date=datetime(2021, 12, 10),
     catchup=False,
-    tags=['weather', 'data_eng'],
+    tags=['weather', 'data_eng', 'test-tag'],
     dagrun_timeout=timedelta(hours=1),
     max_active_runs=1,
     default_args=default_args
