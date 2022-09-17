@@ -19,7 +19,7 @@ default_args: Dict[str, Any] = dict(
 config: Dict[str, Any] = dict(
     dag_id='TemperatureMetrics',
     schedule_interval='@daily',
-    start_date=datetime(2021, 12, 10),
+    start_date=datetime(2022, 9, 15),
     catchup=False,
     tags=['weather', 'data_eng', 'test-tag'],
     dagrun_timeout=timedelta(hours=1),
