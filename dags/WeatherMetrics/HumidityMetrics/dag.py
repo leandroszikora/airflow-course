@@ -19,7 +19,7 @@ default_args: Dict[str, Any] = dict(
 
 config: Dict[str, Any] = dict(
     dag_id='HumidityMetrics',
-    schedule_interval='0 1 * * *',
+    schedule_interval='0 3 * * *',
     start_date=datetime(2021, 12, 10),
     catchup=False,
     tags=['weather', 'data_eng'],
